@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Tremor Showcase</title>
+  <script>
+    var pathSegmentsToKeep = 1;
+    var l = window.location;
+    var pathname = l.pathname;
+    if (pathname.startsWith('/tremor-showcase')) {
+      pathname = pathname.replace('/tremor-showcase', '') || '/';
+    }
+    var redirect = l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+      '/tremor-showcase/index.html' +
+      (pathname !== '/' ? '?/' + pathname.slice(1).replace(/&/g, '~and~') : '') +
+      (l.search ? '&' + l.search.slice(1).replace(/&/g, '~and~') : '') +
+      l.hash;
+    window.location.replace(redirect);
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>
