@@ -1,22 +1,52 @@
-<<<<<<< HEAD
 # Tremor Diagnostic App - Showcase
 
-This is a showcase website for the Tremor Diagnostic Application.
+This is a **frontend-only** showcase of the Tremor Diagnostic Application.
 
-## Features
+## ⚠️ Important: This is Frontend Only
 
-- Spiral drawing assessment
-- Real-time tremor analysis
-- Comprehensive scoring and reporting
+**GitHub Pages can only host static files** (HTML, CSS, JavaScript). It **cannot run Python backend code**.
 
-## Setup
+### What's Here:
+- ✅ Frontend React app (built with Vite)
+- ✅ All UI components and screens
+- ❌ No Python backend files (GitHub Pages can't run them)
 
-This site is configured for GitHub Pages. The site will be available at:
-`https://YOUR_USERNAME.github.io/tremor-showcase/`
+### To Make It Work Like Your Local Setup:
 
-## Note
+You need **two separate deployments**:
 
-This is a static build of the frontend. The backend API is not included in this showcase.
-=======
-# tremor-showcase
->>>>>>> 429d47b95e076b70ac5ab3caffe82758d821335c
+1. **Frontend** (this repository) → GitHub Pages ✅ (already done)
+2. **Backend** (Python/FastAPI) → Needs separate hosting:
+   - **Render** (free tier available): https://render.com
+   - **Railway**: https://railway.app
+   - **Heroku**: https://heroku.com
+   - **Fly.io**: https://fly.io
+
+### Current Status:
+
+- **Frontend**: ✅ Deployed at `https://oskarb357.github.io/tremor-showcase/`
+- **Backend**: ❌ Not deployed (needs separate hosting)
+
+### To Connect Frontend to Backend:
+
+Once you deploy the backend, update the frontend's backend URL in:
+- `ProcessingScreen.tsx` - Change `BACKEND_URL` from `http://localhost:8000` to your deployed backend URL
+- Or use environment variables: `VITE_BACKEND_URL`
+
+### About GitHub Actions Cancellation:
+
+The cancellation you saw is **normal**. When multiple commits are pushed quickly, GitHub cancels older deployments and only deploys the latest one. The latest deployment should succeed.
+
+## Local Development
+
+To run locally with both frontend and backend:
+
+```bash
+# Terminal 1: Backend
+cd tremor/backend-main
+python3 main.py
+
+# Terminal 2: Frontend  
+cd tremor/Frontendv35-main
+npm run dev
+```
