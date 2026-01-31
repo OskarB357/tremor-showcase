@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Tremor Diagnostic App - Showcase
 
 This is a showcase website for the Tremor Diagnostic Application.
@@ -16,3 +17,6 @@ This site is configured for GitHub Pages. The site will be available at:
 ## Note
 
 This is a static build of the frontend. The backend API is not included in this showcase.
+=======
+# tremor-showcase
+>>>>>>> 429d47b95e076b70ac5ab3caffe82758d821335c
