@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # default email to send results to
-DEFAULT_RECIPIENT_EMAIL = "ob23@rice.edu"
+DEFAULT_RECIPIENT_EMAIL = "tremordiagnosticapp@gmail.com"
 
 def generate_spiral_image_from_json(json_file_path: str) -> bytes:
     """
