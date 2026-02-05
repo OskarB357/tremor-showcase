@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 
+// Backend URL - defaults to localhost:8000, can be overridden with VITE_BACKEND_URL env var
+const BACKEND_URL = import.meta.env?.VITE_BACKEND_URL || 'http://localhost:8000';
+
 interface DrawingPoint {
   x: number;
   y: number;
@@ -38,102 +41,91 @@ export default function ProcessingScreen({ patientInfo, spiralPoints, spiralPara
   const [isProcessing, setIsProcessing] = useState(true);
 
   useEffect(() => {
-    const calculateDemoScore = () => {
+    const sendSpiralToBackend = async () => {
       if (!patientInfo || spiralPoints.length === 0 || !spiralParams) {
         setError('Missing patient data, spiral points, or spiral parameters');
         setIsProcessing(false);
         return;
       }
 
-      // Simulate processing delay
-      setTimeout(() => {
-        try {
-          // Calculate basic metrics from the spiral drawing
-          const totalPoints = spiralPoints.length;
-          const totalTime = spiralPoints.length > 0 ? spiralPoints[spiralPoints.length - 1].t : 0;
-          
-          // Calculate smoothness (variation in point-to-point distances)
-          let variations = 0;
-          let totalDistance = 0;
-          for (let i = 1; i < spiralPoints.length; i++) {
-            const dx = spiralPoints[i].x - spiralPoints[i - 1].x;
-            const dy = spiralPoints[i].y - spiralPoints[i - 1].y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            totalDistance += dist;
-            
-            if (i > 1) {
-              const prevDx = spiralPoints[i - 1].x - spiralPoints[i - 2].x;
-              const prevDy = spiralPoints[i - 1].y - spiralPoints[i - 2].y;
-              const prevDist = Math.sqrt(prevDx * prevDx + prevDy * prevDy);
-              variations += Math.abs(dist - prevDist);
-            }
-          }
-          
-          const avgVariation = variations / Math.max(1, spiralPoints.length - 2);
-          const avgDistance = totalDistance / Math.max(1, spiralPoints.length - 1);
-          
-          // Calculate deviation from ideal spiral (using spiralParams)
-          let deviation = 0;
-          for (let i = 0; i < Math.min(100, spiralPoints.length); i++) {
-            const point = spiralPoints[i];
-            const angle = Math.atan2(point.y - spiralParams.a, point.x - spiralParams.a);
-            const idealRadius = spiralParams.a + spiralParams.b * angle;
-            const actualRadius = Math.sqrt(
-              Math.pow(point.x - spiralParams.a, 2) + 
-              Math.pow(point.y - spiralParams.a, 2)
-            );
-            deviation += Math.abs(actualRadius - idealRadius);
-          }
-          deviation = deviation / Math.min(100, spiralPoints.length);
-          
-          // Calculate demo score based on smoothness and deviation
-          // Lower variation and deviation = better score (closer to 0)
-          // Higher variation and deviation = worse score (higher number)
-          const smoothnessScore = Math.min(avgVariation / 10, 2.0); // Normalize to 0-2
-          const deviationScore = Math.min(deviation / 50, 2.0); // Normalize to 0-2
-          const baseScore = (smoothnessScore + deviationScore) / 2;
-          
-          // Adjust based on patient info
-          let adjustedScore = baseScore;
-          if (patientInfo.hasMovementDisorder === 'yes') {
-            adjustedScore += 0.3; // Slightly higher score if they have a disorder
-          }
-          
-          // Add some randomness for demo purposes (±0.2)
-          const randomFactor = (Math.random() - 0.5) * 0.4;
-          const finalScore = Math.max(0, Math.min(3, adjustedScore + randomFactor));
-          
-          const scoredResult: ScoreData = {
-            spiral_id: Date.now(), // Use timestamp as ID
-            severity_score: finalScore,
-            classification: 'tremor_score_demo',
-            features: {
-              metrics: {
-                'Total points': totalPoints,
-                'Total time (ms)': totalTime,
-                'Average variation': avgVariation.toFixed(2),
-                'Average distance': avgDistance.toFixed(2),
-                'Spiral deviation': deviation.toFixed(2),
-              }
-            }
-          };
-          
-          console.log('Demo scoring result:', scoredResult);
-          setIsProcessing(false);
-          
-          // Go to report screen
-          setTimeout(() => {
-            onComplete(scoredResult);
-          }, 500);
-        } catch (err) {
-          console.error('Error calculating demo score:', err);
-          setError(err instanceof Error ? err.message : 'Failed to process spiral');
-          setIsProcessing(false);
+      try {
+        // Build payload to match backend schema
+        const mmPerUnit = 0.264583; // Default conversion for 96dpi (mm per pixel)
+        
+        const payload = {
+          user_id: 1, // Default user - create user first in production
+          device_name: 'Web Browser',
+          dpi: 96.0, // Default DPI for web
+          mm_per_unit: mmPerUnit,
+          form_json: {
+            age: parseInt(patientInfo.age) || 0,
+            has_tremor: patientInfo.hasMovementDisorder === 'yes',
+            on_medication: false, // Not collected in current questionnaire
+            movement_disorder: patientInfo.disorderType || 'None',
+            // Convert spiral parameters from pixels to millimeters
+            a: spiralParams.a * mmPerUnit,
+            b: spiralParams.b * mmPerUnit,
+          },
+          raw_json: {
+            points: spiralPoints.map(p => ({ x: p.x, y: p.y, t_ms: p.t })),
+          },
+          normalized_json: {
+            // Convert pixels to millimeters for normalized_json
+            points: spiralPoints.map(p => ({ 
+              x: p.x * mmPerUnit, 
+              y: p.y * mmPerUnit, 
+              t_ms: p.t 
+            })),
+          },
+          png_path: '',
+        };
+
+        // 1. Create the spiral
+        const createResponse = await fetch(`${BACKEND_URL}/spirals/`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(payload),
+        });
+
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          throw new Error(`Backend error (create spiral): ${createResponse.status} - ${errorText}`);
         }
-      }, 2000); // 2 second processing delay for demo
+
+        const savedSpiralData = await createResponse.json();
+
+        // 2. Score the newly created spiral
+        const scoreResponse = await fetch(`${BACKEND_URL}/spirals/${savedSpiralData.id}/score`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!scoreResponse.ok) {
+          const errorText = await scoreResponse.text();
+          throw new Error(`Backend error (score spiral): ${scoreResponse.status} - ${errorText}`);
+        }
+
+        const scoredResult: ScoreData = await scoreResponse.json();
+        console.log('Scoring result:', scoredResult);
+
+        setIsProcessing(false);
+        
+        // Go to report screen after successful save and scoring
+        setTimeout(() => {
+          onComplete(scoredResult);
+        }, 1000);
+      } catch (err) {
+        console.error('Error sending spiral to backend:', err);
+        setError(err instanceof Error ? err.message : 'Failed to process spiral');
+        setIsProcessing(false);
+      }
     };
 
-    calculateDemoScore();
+    sendSpiralToBackend();
   }, [patientInfo, spiralPoints, spiralParams, onComplete]);
 
   return (
