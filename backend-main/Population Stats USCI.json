@@ -1,0 +1,20 @@
+{
+    "statistics": {
+        "description": "Rough population statistics based on controls from USCI data, somecould definitely depend on the spiral parameters",
+        "Population mean of log dr_dtheta": 2.771737901356492,
+        "Population stdev of log dr_dtheta": 1.1193156110743097,
+        "Population RMSE of dr_dtheta": 19.24207307044371,
+        "Population mean of log dr_dt": -4.700288793001129,
+        "Population stdev of log dr_dt": 1.1190941603258402,
+        "Population RMSE of dr_dt": 0.0623286404437423,
+        "Population mean of drawn AUC to fit AUC": 0.7740100283866594,
+        "Population stdev of drawn AUC to fit AUC": 0.27594498081629704,
+        "Population mean of log dimensionless jerk": 4.7456326892008944e-11,
+        "Population stdev of log dimensionless jerk": 1.0531977518509097e-10,
+        "Population mean of geometric power": 7.646539470430874,
+        "Population stdev of geometric power": 14.984856129372917,
+        "Population mean of temporal power": 3.943880278732705e-05,
+        "Population stdev of temporal power": 0.005347589063799611,
+        "generated_at": "2026-01-27T02:39:09.598783"
+    }
+}
